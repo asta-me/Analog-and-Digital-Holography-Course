@@ -48,7 +48,7 @@ aperture_radius = 0.0015  # Aperture radius [m]
 r = np.sqrt(x1**2 + y1**2)
 
 # Circular aperture with a hard edge
-u1 = (r <= aperture_radius).astype(float)
+# u1 = (r <= aperture_radius).astype(float)
 
 # Alternative: circular aperture with a smooth edge
 # u1 = np.exp(-(r / aperture_radius)**50)
@@ -58,8 +58,8 @@ u1 = (r <= aperture_radius).astype(float)
 #       (np.abs(y1) <= aperture_radius)).astype(float)
 
 # Alternative: square aperture with smooth edges
-# u1 = np.exp(-((np.abs(x1) / aperture_radius)**50 + \
-#               (np.abs(y1) / aperture_radius)**50))
+u1 = np.exp(-((np.abs(x1) / aperture_radius)**50 + \
+              (np.abs(y1) / aperture_radius)**50))
 
 # Display the source field
 plt.figure(figsize=(6, 6))
@@ -162,7 +162,7 @@ plt.xlim(-zoom_limit, zoom_limit)
 plt.show()
 
 #%% 7. SAVE PROPAGATION STACKS FOR IMAGEJ
-depths = np.linspace(0 , 0.1, 41)
+depths = np.linspace(0 , 0.25, 41)
 intensity_stack = []
 central_profiles = []
 labels = []

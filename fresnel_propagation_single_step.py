@@ -36,7 +36,6 @@ dx = 10 * 1e-6    # Sampling interval in the source plane (Δxs) [m]
 dy = 10 * 1e-6    # Sampling interval in the source plane (Δys) [m]
 lam = 633 * 1e-9  # Wavelength (λ) [m]
 dist = 0.5        # Propagation distance [m] (0.16 to 0.4 works fine)
-min_dist = 2 * aperture_radius * dx / lam  # Minimum valid propagation distance according to sampling criteria
 
 #%% 2. SOURCE PLANE: FIELD DEFINITION AND DISPLAY
 
@@ -47,6 +46,7 @@ x1, y1 = np.meshgrid(x1_coords, y1_coords)
 
 # Definition of the source field (input field u1)
 aperture_radius = 0.0015  # Aperture radius [m]
+min_dist = 2 * aperture_radius * dx / lam  # Minimum valid propagation distance according to sampling criteria
 r = np.sqrt(x1**2 + y1**2)
 
 # Circular aperture with a smooth edge

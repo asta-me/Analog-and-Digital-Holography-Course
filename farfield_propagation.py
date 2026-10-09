@@ -44,15 +44,15 @@ aperture_radius = 0.0005  # Aperture radius [m] D = 1 mm
 r = np.sqrt(x1**2 + y1**2)
 
 # Circular aperture with a hard edge
-u1 = (r <= aperture_radius).astype(float)
+# u1 = (r <= aperture_radius).astype(float)
 # Alternative: circular aperture with a smooth edge
-# u1 = np.exp(-(r / aperture_radius)**50)
+u1 = np.exp(-(r / aperture_radius)**50)
 # Alternative: square aperture with hard edges
 # u1 = ((np.abs(x1) <= aperture_radius) & \
 #       (np.abs(y1) <= aperture_radius)).astype(float)
 # Alternative: square aperture with smooth edges
-u1 = np.exp(-((np.abs(x1) / aperture_radius)**50 + \
-              (np.abs(y1) / aperture_radius)**50))
+# u1 = np.exp(-((np.abs(x1) / aperture_radius)**50 + \
+#               (np.abs(y1) / aperture_radius)**50))
 
 # Display the source field
 plt.figure()
@@ -98,7 +98,7 @@ u2 = fraunhofer_far_field(u1, lam, z=dist)
 intensity = np.abs(u2)**2
 
 # Optional contrast enhancement to make the faint rings more visible
-gamma = 1
+gamma = 0.5
 intensity_display = intensity**gamma
 
 #%% 5. PROPAGATED INTENSITY
@@ -138,7 +138,7 @@ plt.show()
 # Axis limits to display the central area
 zoom_limit = 5e-2
 # Saturation threshold
-saturation_threshold = 1/50
+saturation_threshold = 1/10
 
 plt.figure(figsize=(24, 12))
 plt.imshow(
