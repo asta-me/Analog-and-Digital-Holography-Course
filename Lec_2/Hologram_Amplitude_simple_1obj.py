@@ -46,13 +46,12 @@ dy = dx
 # Physical Parameters
 lam = 633 * 1e-9                # Wavelength [m]
 k = 2 * np.pi / lam             # Wavenumber [rad/m]
-dist = 0.2                      # Object distance [m]
-dist = 0.005                    # ??? Let's see
+dist = 0.2                    # Object distance [m]
+# dist = 0.005                    # ??? Let's see
 
 # Holography Parameters
-
 theta_x_rad = 0                   # On-axis configuration (no tilt)
-# theta_x_rad = np.deg2rad(0.55)  # Off-axis angles 
+theta_x_rad = np.deg2rad(0.55)    # Off-axis angles 
 theta_y_rad = theta_x_rad
 
 pupil_radius_factor = 0.5       # Reference beam pupil size relative to the grid radius.
@@ -65,6 +64,8 @@ obj_amp = np.array(Image.open("m_big_centered.bmp")) / 255.0
 
 # Apply a random phase to simulate a real diffusing object
 rand_phase = np.random.rand(M, N) * 2 * np.pi
+rand_phase *=0
+
 u1 = obj_amp * np.exp(1j * rand_phase)
 
 plt.figure()
@@ -129,7 +130,7 @@ I_virtual /= np.max(I_virtual)
 # Visualization note: for linear scale plots, clipping with 'vmax' is
 # useful to prevent the bright zero-order from saturating the colormap.
 # A value like vmax=0.75 often works well.
-I_threshold = 0.75
+I_threshold = 0.1
 
 plt.figure()
 plt.imshow(I_real, cmap='hot', vmax=I_threshold)

@@ -80,7 +80,8 @@ R = pupil_mask
 
 # Record the hologram intensity
 print("Recording hologram...")
-hologram = np.abs(O + R)**2
+I = np.abs(O + R)**2
+hologram = I
 # hologram -= np.mean(hologram) # Optional: remove DC background
 #%%
 # --- 4. HOLOGRAM RECONSTRUCTION ---
