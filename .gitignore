@@ -1,2 +1,6 @@
 *.[tT][iI][fF]
 *.[tT][iI][fF][fF]
+
+# Experimental TIFFs and reconstruction stacks stay local.
+# Do not publish PowerPoint's temporary lock file.
+Lec_3/~$*
