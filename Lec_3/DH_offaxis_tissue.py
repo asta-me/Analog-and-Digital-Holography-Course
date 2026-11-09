@@ -1,6 +1,6 @@
 #%%
 # =============================================================================
-# DIGITAL HOLOGRAPHY: OFF-AXIS TISSUE PAPER RECONSTRUCTION
+# DIGITAL HOLOGRAPHY: OFF-AXIS TISSUE
 #
 # Author: Marco Astarita
 # Date: November 8, 2026
@@ -23,15 +23,13 @@
 # The mask suppresses zero order and twin image, but does not calibrate slide
 # tilt, aberrations or refractive index. Phase is wrapped, not optical thickness.
 #
-# Same procedure as DH_offaxis_paramecium.py; only settings differ.
-# Only final full-field intensity/phase ImageJ stacks are saved, no plot files.
+# Same procedure as DH_offaxis_paramecium.py; only sample settings differ.
+# Only full-field intensity/phase ImageJ stacks are saved, no plot files.
 # Requires NumPy, Matplotlib, Pillow, tifffile. Run #%% cells in order or run
-# this file as a regular script, from Lec_3 or the repository root.
+# this file as a regular script, with Lec_3 as the working directory.
 # =============================================================================
 
 #%% 0. IMPORTS
-from pathlib import Path
-
 import numpy as np
 import matplotlib.pyplot as plt
 import tifffile
@@ -39,26 +37,13 @@ from PIL import Image
 from numpy.fft import fft2, ifft2, fftshift, ifftshift, fftfreq
 
 #%% 1. PHYSICAL PARAMETERS AND INPUT
-sample_title = "Tissue Paper"
-hologram_name = "tissue_paper_oa.tif"
-output_name = "DH_offaxis_tissue_final"
 lam = 630e-9
 dx = 0.3e-6
 dy = dx
-peak_position = (145, 872)  # (row, col) of the selected Fourier side peak
-sigma_mask = 50
-z_focus = -10e-6
-depth_half_range = 20e-6
-n_steps = 41
-depths = np.linspace(z_focus-depth_half_range, z_focus+depth_half_range, n_steps)
-zoom_center = (512, 512)
-zoom_radius = 200
 
-folder = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
-if not (folder / hologram_name).exists():
-    folder = Path.cwd() / "Lec_3"
-hologram_path = folder / hologram_name
-output_prefix = folder / output_name
+sample_title = "Off-Axis Tissue"
+hologram_path = "tissue_paper_oa.tif"
+output_prefix = "DH_offaxis_tissue_output"
 
 #%% 2. FRESNEL TRANSFER FUNCTION AND GAUSSIAN MASK
 def propagate_Fresnel_TF(u1, dx, dy, lam, z):
@@ -80,76 +65,109 @@ def gaussian_mask(shape, center, sigma):
 
 #%% 3. LOAD THE RECORDED HOLOGRAM AND INSPECT THE FRINGES
 hologram = np.asarray(Image.open(hologram_path), dtype=np.float64)
-hologram /= hologram.max()
-N, M = hologram.shape
+# hologram = |O + R|^2: the tilted reference creates a spatial carrier.
+hologram /= np.max(np.abs(hologram))  # Normalised
+N, M = hologram.shape                # Shape
 center = (N//2, M//2)
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 5), constrained_layout=True)
-axes[0].imshow(hologram, cmap='gray')
-axes[0].set_title(f"Off-Axis Hologram: {sample_title}")
-axes[1].imshow(hologram[center[0]-60:center[0]+60, center[1]-60:center[1]+60], cmap='gray')
-axes[1].set_title("Interference Fringes (Carrier)")
-for axis in axes:
-    axis.axis('off')
+plt.figure(figsize=(8, 6))
+plt.imshow(hologram, cmap='gray')
+plt.title(f"{sample_title}: Recorded Hologram")
+plt.axis('off')
+plt.colorbar(label="Normalized intensity")
+plt.show()
+
+fringe_radius = 60  # Zoom to resolve the reference-beam fringes [pixels]
+fringe_crop = (slice(center[0]-fringe_radius, center[0]+fringe_radius),
+               slice(center[1]-fringe_radius, center[1]+fringe_radius))
+plt.figure(figsize=(8, 6))
+plt.imshow(hologram[fringe_crop], cmap='gray')
+plt.title(f"{sample_title}: Interference Fringes")
+plt.axis('off')
 plt.show()
 
 #%% 4. FOURIER SPECTRUM: SELECT A SIDE PEAK
-spectrum = fftshift(fft2(ifftshift(hologram)))
-gamma = 0.1
+peak_position = (145, 872)  # (row, col) of the selected Fourier side peak
+spectrum = fftshift(fft2(ifftshift(hologram)))  # Spectrum of the hologram
+spectrum_module = np.abs(spectrum)
+gamma = 0.1  # Gamma correction for spectrum visualization
+
 plt.figure(figsize=(8, 6))
-plt.imshow(np.abs(spectrum)**gamma, cmap='gray')
+plt.imshow(spectrum_module**gamma, cmap='gray')
 plt.plot(center[1], center[0], 'r.', markersize=10, label='Zero order')
 plt.plot(peak_position[1], peak_position[0], 'r*', markersize=12, label='Selected side peak')
-plt.title(f"Off-Axis Spectrum |FFT|^{gamma}: {sample_title}")
+plt.title(f"{sample_title}: Hologram Spectrum |FFT|^{gamma}")
 plt.legend(loc='lower right')
 plt.axis('off')
 plt.show()
 
 #%% 5. SHIFT THE PEAK TO THE CENTRE AND FILTER
-shift = np.array(center) - np.array(peak_position)
+shift = np.array(center) - np.array(peak_position)  # Remove the carrier
 spectrum_centered = np.roll(spectrum, shift, axis=(0, 1))
-mask = gaussian_mask((N, M), center, sigma_mask)
-spectrum_filtered = mask * spectrum_centered
 
-fig, axes = plt.subplots(1, 3, figsize=(13, 4), constrained_layout=True)
-axes[0].imshow(np.abs(spectrum_centered)**gamma, cmap='gray')
-axes[0].set_title("Carrier Removed")
-axes[1].imshow(mask, cmap='viridis')
-axes[1].set_title(f"Gaussian Mask: sigma = {sigma_mask} px")
-axes[2].imshow(np.abs(spectrum_filtered)**gamma, cmap='gray')
-axes[2].set_title("Selected Object Spectrum")
-for axis in axes:
-    axis.axis('off')
+plt.figure(figsize=(8, 6))
+plt.imshow(np.abs(spectrum_centered)**gamma, cmap='gray')
+plt.title(f"{sample_title}: Carrier Removed")
+plt.axis('off')
+plt.show()
+
+sigma_mask = 50  # Gaussian width in the Fourier plane [pixels]
+mask = gaussian_mask((N, M), center, sigma_mask)
+plt.figure(figsize=(8, 6))
+plt.imshow(mask, cmap='viridis')
+plt.title(f"{sample_title}: Gaussian Mask, sigma = {sigma_mask} px")
+plt.axis('off')
+plt.show()
+
+spectrum_filtered = mask * spectrum_centered  # Keep the selected object term
+plt.figure(figsize=(8, 6))
+plt.imshow(np.abs(spectrum_filtered)**gamma, cmap='gray')
+plt.title(f"{sample_title}: Filtered Spectrum")
+plt.axis('off')
 plt.show()
 
 #%% 6. RECOVER THE COMPLEX FIELD AND REFOCUS
-u_object = fftshift(ifft2(ifftshift(spectrum_filtered)))
+u_object = fftshift(ifft2(ifftshift(spectrum_filtered)))  # Field at z = 0
+I_object = np.abs(u_object)**2
+
+plt.figure(figsize=(8, 6))
+plt.imshow(I_object, cmap='gray')
+plt.title(f"{sample_title}: Intensity, z = 0")
+plt.axis('off')
+plt.show()
+
+plt.figure(figsize=(8, 6))
+plt.imshow(np.angle(u_object), cmap='bwr', vmin=-np.pi, vmax=np.pi)
+plt.title(f"{sample_title}: Wrapped Phase, z = 0")
+plt.axis('off')
+plt.colorbar(label="Phase [rad]")
+plt.show()
+
+z_focus = -10e-6  # Refocus distance for the selected sideband [m]
 u_focus = propagate_Fresnel_TF(u_object, dx, dy, lam, z_focus)
-intensity_limit = np.percentile(np.abs(u_focus)**2, 99.5)
-fig, axes = plt.subplots(2, 2, figsize=(12, 9), constrained_layout=True)
-for col, (field, z) in enumerate(((u_object, 0.0), (u_focus, z_focus))):
-    axes[0, col].imshow(np.abs(field)**2, cmap='gray', vmin=0, vmax=intensity_limit)
-    axes[0, col].set_title(f"Intensity: z = {z*1e6:+.1f} um")
-    axes[1, col].imshow(np.angle(field), cmap='twilight', vmin=-np.pi, vmax=np.pi)
-    axes[1, col].set_title(f"Wrapped Phase: z = {z*1e6:+.1f} um")
-    axes[0, col].axis('off')
-    axes[1, col].axis('off')
+I_focus = np.abs(u_focus)**2
+
+plt.figure(figsize=(8, 6))
+plt.imshow(I_focus, cmap='gray')
+plt.title(f"{sample_title}: Intensity, z = {z_focus*1e6:+.1f} um")
+plt.axis('off')
 plt.show()
 
-#%% 7. ZOOM ON THE REFOCUSED SAMPLE
-row_center, col_center = zoom_center
-crop = (slice(row_center-zoom_radius, row_center+zoom_radius),
-        slice(col_center-zoom_radius, col_center+zoom_radius))
-fig, axes = plt.subplots(1, 2, figsize=(10, 4), constrained_layout=True)
-axes[0].imshow(np.abs(u_focus[crop])**2, cmap='gray', vmin=0, vmax=intensity_limit)
-axes[0].set_title(f"Refocused Intensity: {sample_title}")
-axes[1].imshow(np.angle(u_focus[crop]), cmap='twilight', vmin=-np.pi, vmax=np.pi)
-axes[1].set_title("Wrapped Phase")
-for axis in axes:
-    axis.axis('off')
+plt.figure(figsize=(8, 6))
+plt.imshow(np.angle(u_focus), cmap='bwr', vmin=-np.pi, vmax=np.pi)
+plt.title(f"{sample_title}: Wrapped Phase, z = {z_focus*1e6:+.1f} um")
+plt.axis('off')
+plt.colorbar(label="Phase [rad]")
 plt.show()
 
-#%% 8. FINAL FULL-FIELD STACKS FOR IMAGEJ
+
+#%% 7. OUTPUT FULL-FIELD STACKS FOR IMAGEJ
+# Scan a small defocusing interval around the interesting focus.
+depth_start = z_focus - 20e-6  # [m]
+depth_end = z_focus + 20e-6    # [m]
+n_steps = 41
+depths = np.linspace(depth_start, depth_end, n_steps)
+
 labels = [f"z = {z*1e6:+.2f} um" for z in depths]
 metadata = {"axes": "ZYX", "Labels": labels, "unit": "um",
             "spacing": (depths[1]-depths[0])*1e6}

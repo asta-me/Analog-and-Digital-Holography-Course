@@ -1,6 +1,12 @@
-*.[tT][iI][fF]
-*.[tT][iI][fF][fF]
+# Numerical reconstruction outputs; experimental input TIFFs remain tracked.
+**/*_stack*.[tT][iI][fF]
+**/*_stack*.[tT][iI][fF][fF]
+**/*_sweep.[tT][iI][fF]
+**/*_sweep.[tT][iI][fF][fF]
+**/*_central_profiles.[tT][iI][fF]
+**/*_central_profiles.[tT][iI][fF][fF]
 
-# Experimental TIFFs and reconstruction stacks stay local.
-# Do not publish PowerPoint's temporary lock file.
-Lec_3/~$*
+# Presentations and their temporary lock files stay private and local.
+*.[pP][pP][tT]
+*.[pP][pP][tT][xX]
+~$*
